@@ -155,6 +155,7 @@ class Minesweeper(QWidget):
                         for j in range(-1, 2):
                                 if 0 <= clicked.x + i < self.boardSize and 0 <= clicked.y + j < self.boardSize:
                                     clicked.setStyleSheet("background-color: darkgreen")
+                                    clicked.isMarked == 2
                                     self.cellList[clicked.x + i + self.boardSize*(clicked.y + j)].click()
                 else:
                     clicked.setStyleSheet("background-color: green; font-size: 20px")
