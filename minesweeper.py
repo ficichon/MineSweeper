@@ -1,5 +1,5 @@
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QIcon, QPalette, QColor
+from PyQt5.QtWidgets import QPushButton, QWidget, QLabel, QLineEdit, QStackedWidget, QApplication, QHBoxLayout, QVBoxLayout, QGridLayout,  QSizePolicy
 from PyQt5.QtCore import Qt, pyqtSignal, QSize
 import sys
 import random
@@ -29,41 +29,35 @@ class SettingsWindow(QWidget):
         self.initBody()
     
     def initBody(self):
-        horizLayout = QHBoxLayout()
-        bodyLayout = QVBoxLayout()
-        titleLayout = QHBoxLayout()
+        vertLayout = QVBoxLayout()
+        vertLayout.setAlignment(Qt.AlignCenter)
+        vertLayout.setContentsMargins(100, 0, 100, 0)
 
         self.label = QLabel('Settings'); self.label.setStyleSheet('font-size: 30px')
-        titleLayout.addStretch()
-        titleLayout.addWidget(self.label)
-        titleLayout.addStretch()
+        self.label.setAlignment(Qt.AlignCenter)
 
 
-        self.bombsAmountText = QLineEdit(); self.bombsAmountText.setPlaceholderText('Enter amount of bombs'); 
-        self.bombsAmountText.setMinimumSize(150, 20)
-        self.boardSizeText = QLineEdit(); self.boardSizeText.setPlaceholderText('Enter size of the board');       
+        self.bombsAmountText = QLineEdit(); self.bombsAmountText.setPlaceholderText('Enter amount of bombs')
+        self.bombsAmountText.setMinimumSize(160, 20)
+        self.boardSizeText = QLineEdit(); self.boardSizeText.setPlaceholderText('Enter board size (max 30)')    
+        self.boardSizeText.setMinimumSize(160, 20) 
 
         self.b1 = QPushButton('Start'); self.b1.setStyleSheet('font-size: 30px')
         self.b1.clicked.connect(self.started)
-
-        bodyLayout.addStretch()
-        bodyLayout.addLayout(titleLayout)
-        bodyLayout.addWidget(self.bombsAmountText)
-        bodyLayout.addWidget(self.boardSizeText)
-        bodyLayout.addWidget(self.b1)
-        bodyLayout.addStretch()
         
-        horizLayout.addStretch()
-        horizLayout.addLayout(bodyLayout)
-        horizLayout.addStretch()
+        vertLayout.addWidget(self.label)
+        vertLayout.addWidget(self.bombsAmountText)
+        vertLayout.addWidget(self.boardSizeText)
+        vertLayout.addWidget(self.b1)
 
-        self.setLayout(horizLayout)
-        
+        self.setLayout(vertLayout)
+
+
     def started(self):
         try:
             self.bombsAmount = float(self.bombsAmountText.text())
             self.boardSize = float(self.boardSizeText.text())
-            if self.bombsAmount >= self.boardSize**2:
+            if self.bombsAmount >= self.boardSize**2 or self.boardSize > 30:
                 int('ValueError')
             if self.bombsAmount == int(self.bombsAmount) and self.boardSize == int(self.boardSize):
                 game = Minesweeper(self.bombsAmount, self.boardSize)
@@ -72,6 +66,8 @@ class SettingsWindow(QWidget):
                 self.label.setText('Settings')
         except ValueError:
             self.label.setText('Incorrent data')
+            self.bombsAmountText.clear()
+            self.boardSizeText.clear()
             self.label.adjustSize()
   
 
@@ -86,11 +82,7 @@ class Minesweeper(QWidget):
     def initBody(self):
         bodyLayout = QVBoxLayout()
         boardLayout = QGridLayout()
-        midLayout = QHBoxLayout()
         infoLayout = QHBoxLayout()
-        
-        infoWid = QWidget()
-        boardWid = QWidget()
 
         self.title = QLabel('Game'); self.title.setStyleSheet('font-size: 30px')
         self.bombsLeft = self.bombsAmount
@@ -106,25 +98,24 @@ class Minesweeper(QWidget):
                 cell.rightClicked.connect(self.rightClick)
                 cell.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
                 cell.setMinimumSize(30, 30)
+                cell.setMaximumSize(50, 50)
                 self.cellList.append(cell)
                 boardLayout.addWidget(cell, row, col)
                 boardLayout.setColumnStretch(col, 1)
             boardLayout.setRowStretch(row, 1)
 
         boardLayout.setSpacing(0)
-        
+        boardLayout.setAlignment(Qt.AlignCenter)
+        boardLayout.setContentsMargins(10, 10, 10, 10)
+
         infoLayout.addWidget(self.bombCounter)
         infoLayout.addStretch()
         infoLayout.addWidget(self.title)
         infoLayout.addStretch()
         infoLayout.addWidget(self.cellCounter)
 
-
-        infoWid.setLayout(infoLayout)
-        boardWid.setLayout(boardLayout)
-
-        bodyLayout.addWidget(infoWid,1)
-        bodyLayout.addWidget(boardWid,9)
+        bodyLayout.addLayout(infoLayout)
+        bodyLayout.addLayout(boardLayout)
 
         self.setLayout(bodyLayout)
 
@@ -148,6 +139,7 @@ class Minesweeper(QWidget):
                     if cells.mine:
                         cells.setStyleSheet("background-color: red;")
                         cells.setIcon(QIcon('mine.png'))
+                        cells.isMarked = 2
                     else:
                         cells.click()
                 self.endingWindow.end.setText('You Lost!')
@@ -163,10 +155,8 @@ class Minesweeper(QWidget):
                         for j in range(-1, 2):
                                 if 0 <= clicked.x + i < self.boardSize and 0 <= clicked.y + j < self.boardSize:
                                     clicked.setStyleSheet("background-color: darkgreen")
-                                    clicked.setIcon(QIcon())
                                     self.cellList[clicked.x + i + self.boardSize*(clicked.y + j)].click()
                 else:
-                    clicked.setIcon(QIcon())
                     clicked.setStyleSheet("background-color: green; font-size: 20px")
                     clicked.setText(f'{mineCounter}')
             if self.cellsLeft == 0:
@@ -188,6 +178,9 @@ class Minesweeper(QWidget):
             if self.bombsAmount == 0 and self.cellsLeft == 0:
                 self.endingWindow.end.setText('You Won!')
                 self.endingWindow.gameOver()
+        
+        elif clicked.isMarked == 2:
+            pass
         
         elif clicked.isMarked and not clicked.isClicked:
             if clicked.mine:
@@ -232,8 +225,6 @@ class EndingWindow(QWidget):
         win.setCurrentIndex(win.currentIndex() - 1)
         win.removeWidget(self.prevWindow)
         self.close()
-
-    
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
